@@ -232,11 +232,36 @@ public final class VaifAuth {
         scopes: [String]? = nil,
         queryParams: [String: String]? = nil
     ) -> (provider: String, url: String, error: AuthError?) {
-        var params = ["provider=\(provider.rawValue)"]
-        if let redirect = redirectTo { params.append("redirect_to=\(redirect)") }
-        if let scopes = scopes { params.append("scopes=\(scopes.joined(separator: " "))") }
+        // Validate redirectTo to prevent open redirect attacks.
+        if let redirect = redirectTo {
+            guard let redirectURL = URL(string: redirect),
+                  let scheme = redirectURL.scheme else {
+                return (provider.rawValue, "", AuthError(message: "Invalid redirect URL", status: 400))
+            }
+            // Allow https:// and custom URL schemes (containing a dot, e.g. com.myapp://)
+            // Block http://, javascript:, data:, etc.
+            if scheme != "https" && !scheme.contains(".") {
+                return (provider.rawValue, "", AuthError(
+                    message: "Redirect URL must use HTTPS or a custom URL scheme",
+                    status: 400
+                ))
+            }
+        }
+
+        var params = ["provider=\(provider.rawValue.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? provider.rawValue)"]
+        if let redirect = redirectTo {
+            params.append("redirect_to=\(redirect.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? redirect)")
+        }
+        if let scopes = scopes {
+            let joined = scopes.joined(separator: " ")
+            params.append("scopes=\(joined.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? joined)")
+        }
         if let queryParams = queryParams {
-            queryParams.forEach { params.append("\($0.key)=\($0.value)") }
+            queryParams.forEach {
+                let key = $0.key.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? $0.key
+                let value = $0.value.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? $0.value
+                params.append("\(key)=\(value)")
+            }
         }
 
         let url = "\(client.config.apiUrl)/auth/authorize?\(params.joined(separator: "&"))"

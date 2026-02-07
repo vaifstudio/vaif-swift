@@ -65,7 +65,8 @@ public final class VaifFunctions {
         body: Any? = nil,
         options: FunctionInvokeOptions = FunctionInvokeOptions()
     ) async throws -> FunctionResponse<T> {
-        let url = URL(string: "\(client.config.apiUrl)/functions/\(functionName)")!
+        let safeName = functionName.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? functionName
+        let url = URL(string: "\(client.config.apiUrl)/functions/\(safeName)")!
 
         var request = URLRequest(url: url)
         request.httpMethod = options.method
@@ -139,7 +140,8 @@ public final class VaifFunctions {
         body: Any? = nil,
         options: FunctionInvokeOptions = FunctionInvokeOptions()
     ) async throws -> (data: Data?, error: FunctionError?) {
-        let url = URL(string: "\(client.config.apiUrl)/functions/\(functionName)")!
+        let safeName = functionName.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? functionName
+        let url = URL(string: "\(client.config.apiUrl)/functions/\(safeName)")!
 
         var request = URLRequest(url: url)
         request.httpMethod = options.method
@@ -183,7 +185,8 @@ public final class VaifFunctions {
 
     /// Create function URL for direct invocation.
     public func createUrl(_ functionName: String) -> String {
-        return "\(client.config.apiUrl)/functions/\(functionName)"
+        let safeName = functionName.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? functionName
+        return "\(client.config.apiUrl)/functions/\(safeName)"
     }
 
     /// Get list of deployed functions.
@@ -203,8 +206,9 @@ public final class VaifFunctions {
 
     /// Get function details.
     public func get(_ functionName: String) async throws -> (data: [String: Any]?, error: FunctionError?) {
+        let safeName = functionName.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? functionName
         let response: ApiResponse<[String: Any]> = try await client.request(
-            path: "/functions/\(functionName)"
+            path: "/functions/\(safeName)"
         )
 
         if let error = response.error {

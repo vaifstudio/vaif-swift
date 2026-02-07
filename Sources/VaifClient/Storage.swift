@@ -199,8 +199,9 @@ public final class VaifStorage {
 
     /// Delete a bucket.
     public func deleteBucket(_ name: String) async throws -> StorageError? {
+        let safeName = name.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? name
         let response: ApiResponse<EmptyResponse> = try await client.request(
-            path: "/storage/buckets/\(name)",
+            path: "/storage/buckets/\(safeName)",
             method: "DELETE"
         )
 
@@ -228,13 +229,39 @@ public final class StorageBucket {
         self.bucket = bucket
     }
 
+    /// Validate and sanitize a storage path to prevent path traversal attacks.
+    /// Rejects paths containing '..' segments or absolute paths.
+    private func sanitizePath(_ path: String) throws -> String {
+        guard !path.hasPrefix("/") else {
+            throw StorageError(
+                message: "Storage path must not be absolute: \(path)",
+                statusCode: "400",
+                error: "INVALID_PATH"
+            )
+        }
+        let segments = path.components(separatedBy: "/")
+        for segment in segments {
+            if segment == ".." {
+                throw StorageError(
+                    message: "Storage path must not contain path traversal (..): \(path)",
+                    statusCode: "400",
+                    error: "INVALID_PATH"
+                )
+            }
+        }
+        // Normalize: remove empty segments and '.' references
+        let normalized = segments.filter { !$0.isEmpty && $0 != "." }.joined(separator: "/")
+        return normalized
+    }
+
     /// Upload a file.
     public func upload(
         path: String,
         data: Data,
         options: UploadOptions = UploadOptions()
     ) async throws -> (data: UploadResult?, error: StorageError?) {
-        let url = URL(string: "\(client.config.apiUrl)/storage/\(bucket)/\(path)")!
+        let safePath = try sanitizePath(path)
+        let url = URL(string: "\(client.config.apiUrl)/storage/\(bucket)/\(safePath)")!
 
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
@@ -297,7 +324,8 @@ public final class StorageBucket {
         path: String,
         options: DownloadOptions = DownloadOptions()
     ) async throws -> (data: Data?, error: StorageError?) {
-        var urlString = "\(client.config.apiUrl)/storage/\(bucket)/\(path)"
+        let safePath = try sanitizePath(path)
+        var urlString = "\(client.config.apiUrl)/storage/\(bucket)/\(safePath)"
 
         if let transform = options.transform {
             let params = transform.toQueryParams()
@@ -335,8 +363,9 @@ public final class StorageBucket {
     }
 
     /// Get public URL for a file.
-    public func getPublicUrl(path: String) -> String {
-        return "\(client.config.apiUrl)/storage/\(bucket)/\(path)"
+    public func getPublicUrl(path: String) throws -> String {
+        let safePath = try sanitizePath(path)
+        return "\(client.config.apiUrl)/storage/\(bucket)/\(safePath)"
     }
 
     /// Create signed URL.
@@ -346,6 +375,7 @@ public final class StorageBucket {
         transform: ImageTransformOptions? = nil,
         download: Any? = nil
     ) async throws -> (data: [String: Any]?, error: StorageError?) {
+        let safePath = try sanitizePath(path)
         var body: [String: Any] = ["expiresIn": expiresIn]
         if let transform = transform {
             body["transform"] = transform.toQueryParams()
@@ -355,7 +385,7 @@ public final class StorageBucket {
         }
 
         let response: ApiResponse<[String: String]> = try await client.request(
-            path: "/storage/\(bucket)/\(path)/sign",
+            path: "/storage/\(bucket)/\(safePath)/sign",
             method: "POST",
             body: AnyCodable(body)
         )

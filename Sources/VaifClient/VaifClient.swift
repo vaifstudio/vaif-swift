@@ -111,7 +111,9 @@ public struct ApiResponse<T> {
 /// - AI Generation (ai)
 public final class VaifClient {
     public let config: VaifConfig
-    private var accessToken: String?
+    /// Thread-safe access to the access token via a serial queue.
+    private var _accessToken: String?
+    private let tokenQueue = DispatchQueue(label: "studio.vaif.client.token")
     private let session: URLSession
 
     /// Retry configuration for transient errors.
@@ -183,14 +185,14 @@ public final class VaifClient {
         self.session = URLSession(configuration: configuration)
     }
 
-    /// Set access token for authenticated requests.
+    /// Set access token for authenticated requests (thread-safe).
     public func setAccessToken(_ token: String?) {
-        self.accessToken = token
+        tokenQueue.sync { self._accessToken = token }
     }
 
-    /// Get current access token.
+    /// Get current access token (thread-safe).
     public func getAccessToken() -> String? {
-        return accessToken
+        return tokenQueue.sync { self._accessToken }
     }
 
     /// Make an authenticated API request.
@@ -224,7 +226,7 @@ public final class VaifClient {
         if let headers = headers {
             requestHeaders.merge(headers) { _, new in new }
         }
-        if let token = accessToken {
+        if let token = getAccessToken() {
             requestHeaders["Authorization"] = "Bearer \(token)"
         }
 
@@ -238,7 +240,11 @@ public final class VaifClient {
         }
 
         if config.debug {
-            print("[VAIF] \(method) \(url)")
+            // Strip query parameters to avoid leaking tokens in debug output
+            var sanitizedComponents = URLComponents(url: url, resolvingAgainstBaseURL: false)
+            sanitizedComponents?.queryItems = nil
+            let sanitizedUrl = sanitizedComponents?.string ?? url.absoluteString
+            print("[VAIF] \(method) \(sanitizedUrl)")
         }
 
         do {

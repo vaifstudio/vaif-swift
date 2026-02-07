@@ -76,15 +76,20 @@ public final class VaifRealtime {
         self.options = options
         let config = client.config
 
-        var urlString = "\(config.realtimeUrl)?apikey=\(config.apiKey)&project=\(config.projectId)"
-        if let token = client.getAccessToken() {
-            urlString += "&token=\(token)"
-        }
+        // Only pass project ID in query string; credentials go in headers
+        // to avoid token leakage in server/proxy logs.
+        let urlString = "\(config.realtimeUrl)?project=\(config.projectId)"
 
         guard let url = URL(string: urlString) else { return }
 
+        var request = URLRequest(url: url)
+        request.setValue(config.apiKey, forHTTPHeaderField: "apikey")
+        if let token = client.getAccessToken() {
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+
         let session = URLSession(configuration: .default)
-        webSocket = session.webSocketTask(with: url)
+        webSocket = session.webSocketTask(with: request)
         webSocket?.resume()
 
         connected = true

@@ -88,8 +88,9 @@ public final class VaifDatabase {
         _ functionName: String,
         params: [String: Any]? = nil
     ) async throws -> QueryResult<T> {
+        let safeName = functionName.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? functionName
         let response: ApiResponse<T> = try await client.request(
-            path: "/db/rpc/\(functionName)",
+            path: "/db/rpc/\(safeName)",
             method: "POST",
             body: params != nil ? AnyCodable(params!) : nil
         )
