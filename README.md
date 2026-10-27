@@ -436,7 +436,7 @@ throws a `network` error.
 
 `vaif.operations` has one method for each operation in the VAIF Studio API's
 OpenAPI document that has a typed success response, except the operations
-VAIF's own staff tools use: 801 in this version
+the API answers only for VAIF platform staff: 775 in this version
 (`OperationsClient.generatedCount`). Path parameters are strings; query
 values, request bodies and JSON responses are `JSONValue`. Binary and
 server-sent-event responses are returned as `FunctionResponse`.
@@ -447,10 +447,13 @@ let rows = try await vaif.operations.getV1DataByProjectIdByTable(
     path: ["projectId": "YOUR_PROJECT_ID", "table": "todos"], query: ["limit": 20])
 ```
 
-The other 142 operations are listed, with the reason, in
-`OperationsClient.ungenerated`: those without a typed contract, and the 108
-operations VAIF's own staff tools use (`/admin/*` and `/auth/impersonate/*`),
-listed as `platform staff only`. Authentication, retries and errors work as for
+The other 168 operations are listed, with the reason, in
+`OperationsClient.ungenerated`: those without a typed contract, and the 134
+staff-only operations, listed as `platform staff only`. The staff-only
+operations are every operation under `/admin/*` and `/auth/impersonate/*`,
+and those outside them: feature flags (`/flags`), enterprise contract and
+invoice writes, Verament usage statistics (`GET /ai/copilot/stats`) and
+documentation edits under `/docs`. Authentication, retries and errors work as for
 the rest of the client. The files in `Sources/VaifClient/Generated/` are
 generated; do not edit them by hand.
 

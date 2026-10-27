@@ -75,12 +75,16 @@ new: code written for 0.1.x does not compile against 1.0.0.
   refreshed access token, a bounded buffer and typed error frames. No
   automatic reconnect, broadcast or presence.
 - `OperationsClient`: one method per typed operation in the API's SDK
-  OpenAPI document, except the operations VAIF's own staff tools use (801 in
-  this version, `OperationsClient.generatedCount`).
-  The 142 operations without a method are listed, with the reason, in
+  OpenAPI document, except the staff-only operations (775 in this version,
+  `OperationsClient.generatedCount`).
+  The 168 operations without a method are listed, with the reason, in
   `OperationsClient.ungenerated`: the routes without a typed contract and the
-  108 operations VAIF's own staff tools use (`/admin/*` and
-  `/auth/impersonate/*`, reason `platform staff only`).
+  134 staff-only operations (reason `platform staff only`).
+- Staff-only operations are not generated, including the ones outside
+  `/admin`: every operation under `/admin/*` and `/auth/impersonate/*`, plus
+  feature flags (`/flags`), enterprise contract and invoice writes,
+  `GET /ai/copilot/stats` and documentation edits under `/docs`. The API
+  answers them only for VAIF platform staff.
 - The shared SDK conformance cases run in `swift test` against a fake API.
 
 ### Changed

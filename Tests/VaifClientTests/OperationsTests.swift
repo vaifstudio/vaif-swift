@@ -47,10 +47,10 @@ import Testing
     }
 
     @Test func theTableIsCompleteAndConsistent() {
-        // 943 operations in the API's OpenAPI document: 801 generated, 142 not.
+        // 943 operations in the API's OpenAPI document: 775 generated, 168 not.
         #expect(OperationsClient.all.count == OperationsClient.generatedCount)
-        #expect(OperationsClient.generatedCount == 801)
-        #expect(OperationsClient.ungenerated.count == 142)
+        #expect(OperationsClient.generatedCount == 775)
+        #expect(OperationsClient.ungenerated.count == 168)
         for (name, op) in OperationsClient.all {
             #expect(name.hasPrefix(op.method.lowercased()), "\(name)")
             let placeholders = op.path.split(separator: "{").dropFirst().compactMap { $0.split(separator: "}").first.map(String.init) }
@@ -63,20 +63,70 @@ import Testing
         #expect(OperationsClient.all["postAuthForgotPassword"]?.path == "/auth/forgot-password")
     }
 
+    @Test func staffOnlyOperationsOutsideAdminHaveNoMethod() throws {
+        #expect(OperationsClient.all["postFlags"] == nil)
+        #expect(OperationsClient.all["postEnterpriseInvoicesByInvoiceIdPaid"] == nil)
+        #expect(OperationsClient.ungenerated["POST /flags"] == "platform staff only")
+        #expect(OperationsClient.ungenerated["POST /enterprise/invoices/{invoiceId}/paid"] == "platform staff only")
+        // The methods themselves: no declaration of either name in the sources.
+        let generated = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+            .appendingPathComponent("Sources/VaifClient/Generated/GeneratedOperations.swift")
+        let text = try String(contentsOf: generated, encoding: .utf8)
+        #expect(!text.contains("func postFlags("))
+        #expect(!text.contains("func postEnterpriseInvoicesByInvoiceIdPaid("))
+    }
+
     /// True for /admin and /auth/impersonate and the paths under them.
-    private static func isStaffOnly(_ path: String) -> Bool {
+    private static func isStaffOnlyPath(_ path: String) -> Bool {
         path.range(of: #"^/(admin|auth/impersonate)(/|$)"#, options: .regularExpression) != nil
     }
 
+    /// The platform-staff operations outside those paths. The API answers
+    /// each only for VAIF platform staff, so the package has no method for them.
+    private static let staffOnlyOutsideAdmin: Set<String> = [
+        "DELETE /docs/api-endpoints/{id}",
+        "DELETE /docs/changelog/{id}",
+        "DELETE /docs/examples/{id}",
+        "DELETE /docs/sdk-examples/{id}",
+        "DELETE /docs/sdks/{id}",
+        "DELETE /docs/v2/pages/{id}",
+        "DELETE /flags/{key}",
+        "GET /ai/copilot/stats",
+        "GET /flags",
+        "PATCH /docs/api-endpoints/{id}",
+        "PATCH /docs/changelog/{id}",
+        "PATCH /docs/examples/{id}",
+        "PATCH /docs/sdks/{id}",
+        "PATCH /docs/v2/pages/{id}",
+        "POST /docs/api-endpoints",
+        "POST /docs/changelog",
+        "POST /docs/examples",
+        "POST /docs/sdk-examples",
+        "POST /docs/sdks",
+        "POST /docs/v2/pages",
+        "POST /enterprise/contracts",
+        "POST /enterprise/contracts/{contractId}/invoice",
+        "POST /enterprise/invoices/{invoiceId}/paid",
+        "POST /enterprise/invoices/{invoiceId}/send",
+        "POST /flags",
+        "PUT /flags/{key}",
+    ]
+
+    private static func isStaffOnly(_ method: String, _ path: String) -> Bool {
+        isStaffOnlyPath(path) || staffOnlyOutsideAdmin.contains("\(method) \(path)")
+    }
+
     @Test func noMethodCallsAPlatformStaffRoute() throws {
+        #expect(Self.staffOnlyOutsideAdmin.count == 26)
         for (name, op) in OperationsClient.all {
-            #expect(!Self.isStaffOnly(op.path), "\(name) calls \(op.method) \(op.path)")
+            #expect(!Self.isStaffOnly(op.method, op.path), "\(name) calls \(op.method) \(op.path)")
         }
         let staff = OperationsClient.ungenerated.filter { $0.value == "platform staff only" }
-        #expect(staff.count == 108)
+        #expect(staff.count == 134)
         for (route, reason) in OperationsClient.ungenerated {
-            let path = String(route.split(separator: " ", maxSplits: 1)[1])
-            #expect(Self.isStaffOnly(path) == (reason == "platform staff only"), "\(route): \(reason)")
+            let parts = route.split(separator: " ", maxSplits: 1).map(String.init)
+            #expect(Self.isStaffOnly(parts[0], parts[1]) == (reason == "platform staff only"), "\(route): \(reason)")
         }
         #expect(OperationsClient.ungenerated["POST /auth/impersonate/token"] == "platform staff only")
         #expect(OperationsClient.ungenerated["POST /admin/admins"] == "platform staff only")

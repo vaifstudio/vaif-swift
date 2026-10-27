@@ -1,10 +1,10 @@
 // Generated from the VAIF Studio API's OpenAPI document. Do not edit by hand.
-// Spec sha256:615e77b7a0789543; 801 operations generated, 142 not generated (see OperationsClient.ungenerated).
+// Spec sha256:615e77b7a0789543; 775 operations generated, 168 not generated (see OperationsClient.ungenerated).
 import Foundation
 
 extension OperationsClient {
-    /// How many operations this file was generated with (801).
-    public static let generatedCount = 801
+    /// How many operations this file was generated with (775).
+    public static let generatedCount = 775
 
     /// Every generated operation, from the API's OpenAPI document.
     public static let all: [String: OperationDescriptor] = {
@@ -20,13 +20,6 @@ extension OperationsClient {
         ops["deleteBucketsByBucketIdFiles"] = OperationDescriptor(method: "DELETE", path: "/buckets/{bucketId}/files", pathParameters: ["bucketId"], requiredQuery: ["key"], bodyKind: "none", bodyRequired: false, transport: "json")
         ops["deleteDatabaseExtensionsProjectByProjectIdByExtensionId"] = OperationDescriptor(method: "DELETE", path: "/database/extensions/project/{projectId}/{extensionId}", pathParameters: ["projectId", "extensionId"], requiredQuery: [], bodyKind: "none", bodyRequired: false, transport: "json")
         ops["deleteDatabaseWrappersProjectByProjectIdByWrapperId"] = OperationDescriptor(method: "DELETE", path: "/database/wrappers/project/{projectId}/{wrapperId}", pathParameters: ["projectId", "wrapperId"], requiredQuery: [], bodyKind: "none", bodyRequired: false, transport: "json")
-        ops["deleteDocsApiEndpointsById"] = OperationDescriptor(method: "DELETE", path: "/docs/api-endpoints/{id}", pathParameters: ["id"], requiredQuery: [], bodyKind: "none", bodyRequired: false, transport: "json")
-        ops["deleteDocsChangelogById"] = OperationDescriptor(method: "DELETE", path: "/docs/changelog/{id}", pathParameters: ["id"], requiredQuery: [], bodyKind: "none", bodyRequired: false, transport: "json")
-        ops["deleteDocsExamplesById"] = OperationDescriptor(method: "DELETE", path: "/docs/examples/{id}", pathParameters: ["id"], requiredQuery: [], bodyKind: "none", bodyRequired: false, transport: "json")
-        ops["deleteDocsSdkExamplesById"] = OperationDescriptor(method: "DELETE", path: "/docs/sdk-examples/{id}", pathParameters: ["id"], requiredQuery: [], bodyKind: "none", bodyRequired: false, transport: "json")
-        ops["deleteDocsSdksById"] = OperationDescriptor(method: "DELETE", path: "/docs/sdks/{id}", pathParameters: ["id"], requiredQuery: [], bodyKind: "none", bodyRequired: false, transport: "json")
-        ops["deleteDocsV2PagesById"] = OperationDescriptor(method: "DELETE", path: "/docs/v2/pages/{id}", pathParameters: ["id"], requiredQuery: [], bodyKind: "none", bodyRequired: false, transport: "json")
-        ops["deleteFlagsByKey"] = OperationDescriptor(method: "DELETE", path: "/flags/{key}", pathParameters: ["key"], requiredQuery: [], bodyKind: "none", bodyRequired: false, transport: "json")
         ops["deleteFunctionsByFunctionId"] = OperationDescriptor(method: "DELETE", path: "/functions/{functionId}", pathParameters: ["functionId"], requiredQuery: [], bodyKind: "none", bodyRequired: false, transport: "json")
         ops["deleteFunctionsByFunctionIdSchedule"] = OperationDescriptor(method: "DELETE", path: "/functions/{functionId}/schedule", pathParameters: ["functionId"], requiredQuery: [], bodyKind: "none", bodyRequired: false, transport: "json")
         ops["deleteFunctionsSecretsBySecretId"] = OperationDescriptor(method: "DELETE", path: "/functions/secrets/{secretId}", pathParameters: ["secretId"], requiredQuery: [], bodyKind: "none", bodyRequired: false, transport: "json")
@@ -95,7 +88,6 @@ extension OperationsClient {
         ops["getAiCopilotSessionBySessionIdWorkspaceStatus"] = OperationDescriptor(method: "GET", path: "/ai/copilot/session/{sessionId}/workspace/status", pathParameters: ["sessionId"], requiredQuery: [], bodyKind: "none", bodyRequired: false, transport: "json")
         ops["getAiCopilotSessionBySessionIdWorkspaceTypes"] = OperationDescriptor(method: "GET", path: "/ai/copilot/session/{sessionId}/workspace/types", pathParameters: ["sessionId"], requiredQuery: [], bodyKind: "none", bodyRequired: false, transport: "json")
         ops["getAiCopilotSessionsByProjectId"] = OperationDescriptor(method: "GET", path: "/ai/copilot/sessions/{projectId}", pathParameters: ["projectId"], requiredQuery: [], bodyKind: "none", bodyRequired: false, transport: "json")
-        ops["getAiCopilotStats"] = OperationDescriptor(method: "GET", path: "/ai/copilot/stats", pathParameters: [], requiredQuery: [], bodyKind: "none", bodyRequired: false, transport: "json")
         ops["getAiCopilotUsageByProjectId"] = OperationDescriptor(method: "GET", path: "/ai/copilot/usage/{projectId}", pathParameters: ["projectId"], requiredQuery: [], bodyKind: "none", bodyRequired: false, transport: "json")
         ops["getAiCopilotUsageOrgByOrgId"] = OperationDescriptor(method: "GET", path: "/ai/copilot/usage-org/{orgId}", pathParameters: ["orgId"], requiredQuery: [], bodyKind: "none", bodyRequired: false, transport: "json")
         ops["getAiCopilotVersionByVersionId"] = OperationDescriptor(method: "GET", path: "/ai/copilot/version/{versionId}", pathParameters: ["versionId"], requiredQuery: [], bodyKind: "none", bodyRequired: false, transport: "json")
@@ -198,7 +190,6 @@ extension OperationsClient {
         ops["getEnterprisePricing"] = OperationDescriptor(method: "GET", path: "/enterprise/pricing", pathParameters: [], requiredQuery: [], bodyKind: "none", bodyRequired: false, transport: "json")
         ops["getEnterpriseQuotesByQuoteId"] = OperationDescriptor(method: "GET", path: "/enterprise/quotes/{quoteId}", pathParameters: ["quoteId"], requiredQuery: [], bodyKind: "none", bodyRequired: false, transport: "json")
         ops["getEntitlementsOrgByOrgId"] = OperationDescriptor(method: "GET", path: "/entitlements/org/{orgId}", pathParameters: ["orgId"], requiredQuery: [], bodyKind: "none", bodyRequired: false, transport: "json")
-        ops["getFlags"] = OperationDescriptor(method: "GET", path: "/flags", pathParameters: [], requiredQuery: [], bodyKind: "none", bodyRequired: false, transport: "json")
         ops["getFunctionsByFunctionId"] = OperationDescriptor(method: "GET", path: "/functions/{functionId}", pathParameters: ["functionId"], requiredQuery: [], bodyKind: "none", bodyRequired: false, transport: "json")
         ops["getFunctionsByFunctionIdDeployStatus"] = OperationDescriptor(method: "GET", path: "/functions/{functionId}/deploy-status", pathParameters: ["functionId"], requiredQuery: [], bodyKind: "none", bodyRequired: false, transport: "json")
         ops["getFunctionsByFunctionIdInvocations"] = OperationDescriptor(method: "GET", path: "/functions/{functionId}/invocations", pathParameters: ["functionId"], requiredQuery: [], bodyKind: "none", bodyRequired: false, transport: "json")
@@ -414,11 +405,6 @@ extension OperationsClient {
         ops["patchBillingOrgByOrgIdContactsByContactId"] = OperationDescriptor(method: "PATCH", path: "/billing/org/{orgId}/contacts/{contactId}", pathParameters: ["orgId", "contactId"], requiredQuery: [], bodyKind: "json", bodyRequired: true, transport: "json")
         ops["patchBillingOrgByOrgIdUsageAlertsByAlertId"] = OperationDescriptor(method: "PATCH", path: "/billing/org/{orgId}/usage-alerts/{alertId}", pathParameters: ["orgId", "alertId"], requiredQuery: [], bodyKind: "json", bodyRequired: true, transport: "json")
         ops["patchDatabaseWrappersProjectByProjectIdByWrapperId"] = OperationDescriptor(method: "PATCH", path: "/database/wrappers/project/{projectId}/{wrapperId}", pathParameters: ["projectId", "wrapperId"], requiredQuery: [], bodyKind: "json", bodyRequired: true, transport: "json")
-        ops["patchDocsApiEndpointsById"] = OperationDescriptor(method: "PATCH", path: "/docs/api-endpoints/{id}", pathParameters: ["id"], requiredQuery: [], bodyKind: "json", bodyRequired: true, transport: "json")
-        ops["patchDocsChangelogById"] = OperationDescriptor(method: "PATCH", path: "/docs/changelog/{id}", pathParameters: ["id"], requiredQuery: [], bodyKind: "json", bodyRequired: true, transport: "json")
-        ops["patchDocsExamplesById"] = OperationDescriptor(method: "PATCH", path: "/docs/examples/{id}", pathParameters: ["id"], requiredQuery: [], bodyKind: "json", bodyRequired: true, transport: "json")
-        ops["patchDocsSdksById"] = OperationDescriptor(method: "PATCH", path: "/docs/sdks/{id}", pathParameters: ["id"], requiredQuery: [], bodyKind: "json", bodyRequired: true, transport: "json")
-        ops["patchDocsV2PagesById"] = OperationDescriptor(method: "PATCH", path: "/docs/v2/pages/{id}", pathParameters: ["id"], requiredQuery: [], bodyKind: "json", bodyRequired: true, transport: "json")
         ops["patchEnterpriseOrgByOrgIdOnboarding"] = OperationDescriptor(method: "PATCH", path: "/enterprise/org/{orgId}/onboarding", pathParameters: ["orgId"], requiredQuery: [], bodyKind: "json", bodyRequired: true, transport: "json")
         ops["patchFunctionsByFunctionId"] = OperationDescriptor(method: "PATCH", path: "/functions/{functionId}", pathParameters: ["functionId"], requiredQuery: [], bodyKind: "json", bodyRequired: true, transport: "json")
         ops["patchFunctionsTriggersByTriggerId"] = OperationDescriptor(method: "PATCH", path: "/functions/triggers/{triggerId}", pathParameters: ["triggerId"], requiredQuery: [], bodyKind: "json", bodyRequired: true, transport: "json")
@@ -566,22 +552,11 @@ extension OperationsClient {
         ops["postDeploymentsTokens"] = OperationDescriptor(method: "POST", path: "/deployments/tokens", pathParameters: [], requiredQuery: [], bodyKind: "json", bodyRequired: true, transport: "json")
         ops["postDeploymentsTokensByTokenIdRevoke"] = OperationDescriptor(method: "POST", path: "/deployments/tokens/{tokenId}/revoke", pathParameters: ["tokenId"], requiredQuery: [], bodyKind: "none", bodyRequired: false, transport: "json")
         ops["postDeploymentsTrigger"] = OperationDescriptor(method: "POST", path: "/deployments/trigger", pathParameters: [], requiredQuery: [], bodyKind: "json", bodyRequired: false, transport: "json")
-        ops["postDocsApiEndpoints"] = OperationDescriptor(method: "POST", path: "/docs/api-endpoints", pathParameters: [], requiredQuery: [], bodyKind: "json", bodyRequired: true, transport: "json")
-        ops["postDocsChangelog"] = OperationDescriptor(method: "POST", path: "/docs/changelog", pathParameters: [], requiredQuery: [], bodyKind: "json", bodyRequired: true, transport: "json")
-        ops["postDocsExamples"] = OperationDescriptor(method: "POST", path: "/docs/examples", pathParameters: [], requiredQuery: [], bodyKind: "json", bodyRequired: true, transport: "json")
         ops["postDocsFeedback"] = OperationDescriptor(method: "POST", path: "/docs/feedback", pathParameters: [], requiredQuery: [], bodyKind: "json", bodyRequired: false, transport: "json")
-        ops["postDocsSdkExamples"] = OperationDescriptor(method: "POST", path: "/docs/sdk-examples", pathParameters: [], requiredQuery: [], bodyKind: "json", bodyRequired: true, transport: "json")
-        ops["postDocsSdks"] = OperationDescriptor(method: "POST", path: "/docs/sdks", pathParameters: [], requiredQuery: [], bodyKind: "json", bodyRequired: true, transport: "json")
         ops["postDocsSearchClick"] = OperationDescriptor(method: "POST", path: "/docs/search-click", pathParameters: [], requiredQuery: [], bodyKind: "json", bodyRequired: false, transport: "json")
-        ops["postDocsV2Pages"] = OperationDescriptor(method: "POST", path: "/docs/v2/pages", pathParameters: [], requiredQuery: [], bodyKind: "json", bodyRequired: true, transport: "json")
-        ops["postEnterpriseContracts"] = OperationDescriptor(method: "POST", path: "/enterprise/contracts", pathParameters: [], requiredQuery: [], bodyKind: "json", bodyRequired: true, transport: "json")
-        ops["postEnterpriseContractsByContractIdInvoice"] = OperationDescriptor(method: "POST", path: "/enterprise/contracts/{contractId}/invoice", pathParameters: ["contractId"], requiredQuery: [], bodyKind: "json", bodyRequired: true, transport: "json")
         ops["postEnterpriseInquire"] = OperationDescriptor(method: "POST", path: "/enterprise/inquire", pathParameters: [], requiredQuery: [], bodyKind: "json", bodyRequired: true, transport: "json")
-        ops["postEnterpriseInvoicesByInvoiceIdPaid"] = OperationDescriptor(method: "POST", path: "/enterprise/invoices/{invoiceId}/paid", pathParameters: ["invoiceId"], requiredQuery: [], bodyKind: "json", bodyRequired: true, transport: "json")
-        ops["postEnterpriseInvoicesByInvoiceIdSend"] = OperationDescriptor(method: "POST", path: "/enterprise/invoices/{invoiceId}/send", pathParameters: ["invoiceId"], requiredQuery: [], bodyKind: "none", bodyRequired: false, transport: "json")
         ops["postEnterpriseQuotesByQuoteIdAccept"] = OperationDescriptor(method: "POST", path: "/enterprise/quotes/{quoteId}/accept", pathParameters: ["quoteId"], requiredQuery: [], bodyKind: "none", bodyRequired: false, transport: "json")
         ops["postEntitlementsOrgByOrgIdCheck"] = OperationDescriptor(method: "POST", path: "/entitlements/org/{orgId}/check", pathParameters: ["orgId"], requiredQuery: [], bodyKind: "json", bodyRequired: false, transport: "json")
-        ops["postFlags"] = OperationDescriptor(method: "POST", path: "/flags", pathParameters: [], requiredQuery: [], bodyKind: "json", bodyRequired: false, transport: "json")
         ops["postFunctions"] = OperationDescriptor(method: "POST", path: "/functions", pathParameters: [], requiredQuery: [], bodyKind: "json", bodyRequired: true, transport: "json")
         ops["postFunctionsByFunctionIdOrNameInvoke"] = OperationDescriptor(method: "POST", path: "/functions/{functionIdOrName}/invoke", pathParameters: ["functionIdOrName"], requiredQuery: [], bodyKind: "json", bodyRequired: false, transport: "json")
         ops["postFunctionsByFunctionIdTriggers"] = OperationDescriptor(method: "POST", path: "/functions/{functionId}/triggers", pathParameters: ["functionId"], requiredQuery: [], bodyKind: "json", bodyRequired: true, transport: "json")
@@ -791,7 +766,6 @@ extension OperationsClient {
         ops["putBillingOrgByOrgIdFounderWall"] = OperationDescriptor(method: "PUT", path: "/billing/org/{orgId}/founder/wall", pathParameters: ["orgId"], requiredQuery: [], bodyKind: "json", bodyRequired: true, transport: "json")
         ops["putBillingOrgByOrgIdTaxInfo"] = OperationDescriptor(method: "PUT", path: "/billing/org/{orgId}/tax-info", pathParameters: ["orgId"], requiredQuery: [], bodyKind: "json", bodyRequired: true, transport: "json")
         ops["putBucketsByBucketId"] = OperationDescriptor(method: "PUT", path: "/buckets/{bucketId}", pathParameters: ["bucketId"], requiredQuery: [], bodyKind: "json", bodyRequired: true, transport: "json")
-        ops["putFlagsByKey"] = OperationDescriptor(method: "PUT", path: "/flags/{key}", pathParameters: ["key"], requiredQuery: [], bodyKind: "json", bodyRequired: false, transport: "json")
         ops["putFunctionsByFunctionIdSchedule"] = OperationDescriptor(method: "PUT", path: "/functions/{functionId}/schedule", pathParameters: ["functionId"], requiredQuery: [], bodyKind: "json", bodyRequired: true, transport: "json")
         ops["putFunctionsByFunctionIdSource"] = OperationDescriptor(method: "PUT", path: "/functions/{functionId}/source", pathParameters: ["functionId"], requiredQuery: [], bodyKind: "json", bodyRequired: true, transport: "json")
         ops["putFunctionsSecretsBySecretId"] = OperationDescriptor(method: "PUT", path: "/functions/secrets/{secretId}", pathParameters: ["secretId"], requiredQuery: [], bodyKind: "json", bodyRequired: true, transport: "json")
@@ -933,6 +907,7 @@ extension OperationsClient {
         "POST /ai/copilot/session/{sessionId}/workspace/approve-scripts": "no typed 2xx application/json response in the spec",
         "POST /ai/copilot/session/{sessionId}/workspace/preview/{target}/open": "no typed 2xx application/json response in the spec",
         "POST /ai/copilot/session/{sessionId}/workspace/preview/reset": "no typed 2xx application/json response in the spec",
+        "GET /ai/copilot/stats": "platform staff only",
         "POST /auth/impersonate/exchange": "platform staff only",
         "POST /auth/impersonate/token": "platform staff only",
         "GET /auth/oauth/{provider}": "no typed 2xx application/json response in the spec",
@@ -943,7 +918,32 @@ extension OperationsClient {
         "GET /billing/org/{orgId}/invoices/{invoiceId}/pdf": "no typed 2xx application/json response in the spec",
         "POST /blueprint/frontend-beta": "no typed 2xx application/json response in the spec",
         "POST /docs/ai-answer": "no typed 2xx application/json response in the spec",
+        "POST /docs/api-endpoints": "platform staff only",
+        "DELETE /docs/api-endpoints/{id}": "platform staff only",
+        "PATCH /docs/api-endpoints/{id}": "platform staff only",
+        "POST /docs/changelog": "platform staff only",
+        "DELETE /docs/changelog/{id}": "platform staff only",
+        "PATCH /docs/changelog/{id}": "platform staff only",
+        "POST /docs/examples": "platform staff only",
+        "DELETE /docs/examples/{id}": "platform staff only",
+        "PATCH /docs/examples/{id}": "platform staff only",
+        "POST /docs/sdk-examples": "platform staff only",
+        "DELETE /docs/sdk-examples/{id}": "platform staff only",
+        "POST /docs/sdks": "platform staff only",
+        "DELETE /docs/sdks/{id}": "platform staff only",
+        "PATCH /docs/sdks/{id}": "platform staff only",
+        "POST /docs/v2/pages": "platform staff only",
+        "DELETE /docs/v2/pages/{id}": "platform staff only",
+        "PATCH /docs/v2/pages/{id}": "platform staff only",
+        "POST /enterprise/contracts": "platform staff only",
+        "POST /enterprise/contracts/{contractId}/invoice": "platform staff only",
+        "POST /enterprise/invoices/{invoiceId}/paid": "platform staff only",
+        "POST /enterprise/invoices/{invoiceId}/send": "platform staff only",
         "GET /enterprise/subdomain/{subdomain}": "no typed 2xx application/json response in the spec",
+        "GET /flags": "platform staff only",
+        "POST /flags": "platform staff only",
+        "DELETE /flags/{key}": "platform staff only",
+        "PUT /flags/{key}": "platform staff only",
         "GET /github/oauth/callback": "no typed 2xx application/json response in the spec",
         "GET /logs/project/{projectId}/stream": "no typed 2xx application/json response in the spec",
         "GET /mcp/oauth/authorize": "no typed 2xx application/json response in the spec",
@@ -1012,41 +1012,6 @@ extension OperationsClient {
     /// DELETE /database/wrappers/project/{projectId}/{wrapperId}
     public func deleteDatabaseWrappersProjectByProjectIdByWrapperId(path: [String: String], query: [String: JSONValue] = [:], headers: [String: String] = [:]) async throws -> JSONValue {
         try await callJSON(Self.all["deleteDatabaseWrappersProjectByProjectIdByWrapperId"]!, path: path, query: query, headers: headers)
-    }
-
-    /// DELETE /docs/api-endpoints/{id}
-    public func deleteDocsApiEndpointsById(path: [String: String], headers: [String: String] = [:]) async throws -> JSONValue {
-        try await callJSON(Self.all["deleteDocsApiEndpointsById"]!, path: path, headers: headers)
-    }
-
-    /// DELETE /docs/changelog/{id}
-    public func deleteDocsChangelogById(path: [String: String], headers: [String: String] = [:]) async throws -> JSONValue {
-        try await callJSON(Self.all["deleteDocsChangelogById"]!, path: path, headers: headers)
-    }
-
-    /// DELETE /docs/examples/{id}
-    public func deleteDocsExamplesById(path: [String: String], headers: [String: String] = [:]) async throws -> JSONValue {
-        try await callJSON(Self.all["deleteDocsExamplesById"]!, path: path, headers: headers)
-    }
-
-    /// DELETE /docs/sdk-examples/{id}
-    public func deleteDocsSdkExamplesById(path: [String: String], headers: [String: String] = [:]) async throws -> JSONValue {
-        try await callJSON(Self.all["deleteDocsSdkExamplesById"]!, path: path, headers: headers)
-    }
-
-    /// DELETE /docs/sdks/{id}
-    public func deleteDocsSdksById(path: [String: String], headers: [String: String] = [:]) async throws -> JSONValue {
-        try await callJSON(Self.all["deleteDocsSdksById"]!, path: path, headers: headers)
-    }
-
-    /// DELETE /docs/v2/pages/{id}
-    public func deleteDocsV2PagesById(path: [String: String], headers: [String: String] = [:]) async throws -> JSONValue {
-        try await callJSON(Self.all["deleteDocsV2PagesById"]!, path: path, headers: headers)
-    }
-
-    /// DELETE /flags/{key}
-    public func deleteFlagsByKey(path: [String: String], headers: [String: String] = [:]) async throws -> JSONValue {
-        try await callJSON(Self.all["deleteFlagsByKey"]!, path: path, headers: headers)
     }
 
     /// DELETE /functions/{functionId}
@@ -1387,11 +1352,6 @@ extension OperationsClient {
     /// GET /ai/copilot/sessions/{projectId}
     public func getAiCopilotSessionsByProjectId(path: [String: String], headers: [String: String] = [:]) async throws -> JSONValue {
         try await callJSON(Self.all["getAiCopilotSessionsByProjectId"]!, path: path, headers: headers)
-    }
-
-    /// GET /ai/copilot/stats
-    public func getAiCopilotStats(headers: [String: String] = [:]) async throws -> JSONValue {
-        try await callJSON(Self.all["getAiCopilotStats"]!, headers: headers)
     }
 
     /// GET /ai/copilot/usage/{projectId}
@@ -1902,11 +1862,6 @@ extension OperationsClient {
     /// GET /entitlements/org/{orgId}
     public func getEntitlementsOrgByOrgId(path: [String: String], headers: [String: String] = [:]) async throws -> JSONValue {
         try await callJSON(Self.all["getEntitlementsOrgByOrgId"]!, path: path, headers: headers)
-    }
-
-    /// GET /flags
-    public func getFlags(headers: [String: String] = [:]) async throws -> JSONValue {
-        try await callJSON(Self.all["getFlags"]!, headers: headers)
     }
 
     /// GET /functions/{functionId}
@@ -2984,31 +2939,6 @@ extension OperationsClient {
         try await callJSON(Self.all["patchDatabaseWrappersProjectByProjectIdByWrapperId"]!, path: path, query: query, body: .json(body), headers: headers)
     }
 
-    /// PATCH /docs/api-endpoints/{id}
-    public func patchDocsApiEndpointsById(path: [String: String], body: JSONValue, headers: [String: String] = [:]) async throws -> JSONValue {
-        try await callJSON(Self.all["patchDocsApiEndpointsById"]!, path: path, body: .json(body), headers: headers)
-    }
-
-    /// PATCH /docs/changelog/{id}
-    public func patchDocsChangelogById(path: [String: String], body: JSONValue, headers: [String: String] = [:]) async throws -> JSONValue {
-        try await callJSON(Self.all["patchDocsChangelogById"]!, path: path, body: .json(body), headers: headers)
-    }
-
-    /// PATCH /docs/examples/{id}
-    public func patchDocsExamplesById(path: [String: String], body: JSONValue, headers: [String: String] = [:]) async throws -> JSONValue {
-        try await callJSON(Self.all["patchDocsExamplesById"]!, path: path, body: .json(body), headers: headers)
-    }
-
-    /// PATCH /docs/sdks/{id}
-    public func patchDocsSdksById(path: [String: String], body: JSONValue, headers: [String: String] = [:]) async throws -> JSONValue {
-        try await callJSON(Self.all["patchDocsSdksById"]!, path: path, body: .json(body), headers: headers)
-    }
-
-    /// PATCH /docs/v2/pages/{id}
-    public func patchDocsV2PagesById(path: [String: String], body: JSONValue, headers: [String: String] = [:]) async throws -> JSONValue {
-        try await callJSON(Self.all["patchDocsV2PagesById"]!, path: path, body: .json(body), headers: headers)
-    }
-
     /// PATCH /enterprise/org/{orgId}/onboarding
     public func patchEnterpriseOrgByOrgIdOnboarding(path: [String: String], body: JSONValue, headers: [String: String] = [:]) async throws -> JSONValue {
         try await callJSON(Self.all["patchEnterpriseOrgByOrgIdOnboarding"]!, path: path, body: .json(body), headers: headers)
@@ -3744,34 +3674,9 @@ extension OperationsClient {
         try await callJSON(Self.all["postDeploymentsTrigger"]!, body: body.map(OperationBody.json), headers: headers)
     }
 
-    /// POST /docs/api-endpoints
-    public func postDocsApiEndpoints(body: JSONValue, headers: [String: String] = [:]) async throws -> JSONValue {
-        try await callJSON(Self.all["postDocsApiEndpoints"]!, body: .json(body), headers: headers)
-    }
-
-    /// POST /docs/changelog
-    public func postDocsChangelog(body: JSONValue, headers: [String: String] = [:]) async throws -> JSONValue {
-        try await callJSON(Self.all["postDocsChangelog"]!, body: .json(body), headers: headers)
-    }
-
-    /// POST /docs/examples
-    public func postDocsExamples(body: JSONValue, headers: [String: String] = [:]) async throws -> JSONValue {
-        try await callJSON(Self.all["postDocsExamples"]!, body: .json(body), headers: headers)
-    }
-
     /// POST /docs/feedback
     public func postDocsFeedback(body: JSONValue? = nil, headers: [String: String] = [:]) async throws -> JSONValue {
         try await callJSON(Self.all["postDocsFeedback"]!, body: body.map(OperationBody.json), headers: headers)
-    }
-
-    /// POST /docs/sdk-examples
-    public func postDocsSdkExamples(body: JSONValue, headers: [String: String] = [:]) async throws -> JSONValue {
-        try await callJSON(Self.all["postDocsSdkExamples"]!, body: .json(body), headers: headers)
-    }
-
-    /// POST /docs/sdks
-    public func postDocsSdks(body: JSONValue, headers: [String: String] = [:]) async throws -> JSONValue {
-        try await callJSON(Self.all["postDocsSdks"]!, body: .json(body), headers: headers)
     }
 
     /// POST /docs/search-click
@@ -3779,34 +3684,9 @@ extension OperationsClient {
         try await callJSON(Self.all["postDocsSearchClick"]!, body: body.map(OperationBody.json), headers: headers)
     }
 
-    /// POST /docs/v2/pages
-    public func postDocsV2Pages(body: JSONValue, headers: [String: String] = [:]) async throws -> JSONValue {
-        try await callJSON(Self.all["postDocsV2Pages"]!, body: .json(body), headers: headers)
-    }
-
-    /// POST /enterprise/contracts
-    public func postEnterpriseContracts(body: JSONValue, headers: [String: String] = [:]) async throws -> JSONValue {
-        try await callJSON(Self.all["postEnterpriseContracts"]!, body: .json(body), headers: headers)
-    }
-
-    /// POST /enterprise/contracts/{contractId}/invoice
-    public func postEnterpriseContractsByContractIdInvoice(path: [String: String], body: JSONValue, headers: [String: String] = [:]) async throws -> JSONValue {
-        try await callJSON(Self.all["postEnterpriseContractsByContractIdInvoice"]!, path: path, body: .json(body), headers: headers)
-    }
-
     /// POST /enterprise/inquire
     public func postEnterpriseInquire(body: JSONValue, headers: [String: String] = [:]) async throws -> JSONValue {
         try await callJSON(Self.all["postEnterpriseInquire"]!, body: .json(body), headers: headers)
-    }
-
-    /// POST /enterprise/invoices/{invoiceId}/paid
-    public func postEnterpriseInvoicesByInvoiceIdPaid(path: [String: String], body: JSONValue, headers: [String: String] = [:]) async throws -> JSONValue {
-        try await callJSON(Self.all["postEnterpriseInvoicesByInvoiceIdPaid"]!, path: path, body: .json(body), headers: headers)
-    }
-
-    /// POST /enterprise/invoices/{invoiceId}/send
-    public func postEnterpriseInvoicesByInvoiceIdSend(path: [String: String], headers: [String: String] = [:]) async throws -> JSONValue {
-        try await callJSON(Self.all["postEnterpriseInvoicesByInvoiceIdSend"]!, path: path, headers: headers)
     }
 
     /// POST /enterprise/quotes/{quoteId}/accept
@@ -3817,11 +3697,6 @@ extension OperationsClient {
     /// POST /entitlements/org/{orgId}/check
     public func postEntitlementsOrgByOrgIdCheck(path: [String: String], body: JSONValue? = nil, headers: [String: String] = [:]) async throws -> JSONValue {
         try await callJSON(Self.all["postEntitlementsOrgByOrgIdCheck"]!, path: path, body: body.map(OperationBody.json), headers: headers)
-    }
-
-    /// POST /flags
-    public func postFlags(body: JSONValue? = nil, headers: [String: String] = [:]) async throws -> JSONValue {
-        try await callJSON(Self.all["postFlags"]!, body: body.map(OperationBody.json), headers: headers)
     }
 
     /// POST /functions
@@ -4867,11 +4742,6 @@ extension OperationsClient {
     /// PUT /buckets/{bucketId}
     public func putBucketsByBucketId(path: [String: String], body: JSONValue, headers: [String: String] = [:]) async throws -> JSONValue {
         try await callJSON(Self.all["putBucketsByBucketId"]!, path: path, body: .json(body), headers: headers)
-    }
-
-    /// PUT /flags/{key}
-    public func putFlagsByKey(path: [String: String], body: JSONValue? = nil, headers: [String: String] = [:]) async throws -> JSONValue {
-        try await callJSON(Self.all["putFlagsByKey"]!, path: path, body: body.map(OperationBody.json), headers: headers)
     }
 
     /// PUT /functions/{functionId}/schedule
