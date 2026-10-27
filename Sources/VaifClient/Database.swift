@@ -1,553 +1,386 @@
-/// VAIF Database Client
-///
-/// Type-safe database operations with a fluent query builder.
-
 import Foundation
 
-// MARK: - Database Types
+/// An immutable, chainable query against one table (`/v1/data/:projectId/:table`).
+///
+/// Builder methods return a new `Query`, so a base query can be shared.
+/// Invalid arguments are thrown by the terminal call (`list`, `get`, ...).
+public struct Query: Sendable {
+    /// The API's cap on `limit`.
+    public static let maxLimit = 1000
 
-/// Query error
-public struct QueryError: Error, Sendable, LocalizedError {
-    public let message: String
-    public let code: String?
-    public let details: String?
-
-    public var errorDescription: String? {
-        "QueryError\(code.map { " [\($0)]" } ?? ""): \(message)"
-    }
-}
-
-/// Query result
-public struct QueryResult<T> {
-    public let data: T?
-    public let error: QueryError?
-    public let status: Int
-    public let count: Int?
-
-    public var isSuccess: Bool { error == nil }
-}
-
-// MARK: - Database Client
-
-/// Database client for VAIF Studio.
-public final class VaifDatabase {
-    private let client: VaifClient
-
-    init(client: VaifClient) {
-        self.client = client
-    }
-
-    /// Start a query on a table.
-    ///
-    /// ```swift
-    /// let users = try await vaif.db.from("users").select().execute()
-    /// ```
-    public func from(_ table: String) -> QueryBuilder<[String: Any]> {
-        return QueryBuilder(client: client, table: table)
-    }
-
-    /// Execute raw SQL query (admin only).
-    public func raw<T: Decodable>(
-        _ sql: String,
-        params: [Any]? = nil
-    ) async throws -> QueryResult<[T]> {
-        let body: [String: Any] = [
-            "sql": sql,
-            "params": params ?? []
-        ]
-
-        let response: ApiResponse<RawQueryResponse<T>> = try await client.request(
-            path: "/db/query",
-            method: "POST",
-            body: AnyCodable(body)
-        )
-
-        if let error = response.error {
-            return QueryResult(
-                data: nil,
-                error: QueryError(
-                    message: error.message,
-                    code: error.code ?? "QUERY_ERROR",
-                    details: nil
-                ),
-                status: response.status,
-                count: nil
-            )
-        }
-
-        return QueryResult(
-            data: response.data?.rows,
-            error: nil,
-            status: response.status,
-            count: nil
-        )
-    }
-
-    /// Execute a stored procedure/function.
-    public func rpc<T: Decodable>(
-        _ functionName: String,
-        params: [String: Any]? = nil
-    ) async throws -> QueryResult<T> {
-        let safeName = functionName.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? functionName
-        let response: ApiResponse<T> = try await client.request(
-            path: "/db/rpc/\(safeName)",
-            method: "POST",
-            body: params != nil ? AnyCodable(params!) : nil
-        )
-
-        return QueryResult(
-            data: response.data,
-            error: response.error.map {
-                QueryError(message: $0.message, code: $0.code ?? "RPC_ERROR", details: nil)
-            },
-            status: response.status,
-            count: nil
-        )
-    }
-}
-
-// MARK: - Query Builder
-
-/// Query builder for constructing database queries.
-public final class QueryBuilder<T> {
-    private let client: VaifClient
+    private let transport: Transport
+    private let auth: AuthClient
+    private let projectId: String
     private let table: String
-    private var queryType: String = "select"
-    private var selectColumns: String = "*"
-    private var insertData: Any?
-    private var updateData: [String: Any]?
-    private var filters: [[String: Any]] = []
-    private var orderSpecs: [[String: Any]] = []
-    private var limitCount: Int?
-    private var offsetCount: Int?
-    private var countOption: String?
-    private var negateNext: Bool = false
+    private var filters: [JSONValue] = []
+    private var ordering: [(column: String, descending: Bool)] = []
+    private var columns: [String] = []
+    private var limitValue: Int?
+    private var offsetValue: Int?
+    private var error: VaifError?
 
-    init(client: VaifClient, table: String) {
-        self.client = client
+    init(transport: Transport, auth: AuthClient, projectId: String?, table: String) {
+        self.transport = transport
+        self.auth = auth
+        self.projectId = projectId ?? ""
         self.table = table
-    }
-
-    /// Select columns.
-    @discardableResult
-    public func select(_ columns: String = "*") -> Self {
-        queryType = "select"
-        selectColumns = columns
-        return self
-    }
-
-    /// Insert data.
-    @discardableResult
-    public func insert(_ data: Any) -> Self {
-        queryType = "insert"
-        insertData = data
-        return self
-    }
-
-    /// Update data.
-    @discardableResult
-    public func update(_ data: [String: Any]) -> Self {
-        queryType = "update"
-        updateData = data
-        return self
-    }
-
-    /// Delete rows.
-    @discardableResult
-    public func delete() -> Self {
-        queryType = "delete"
-        return self
-    }
-
-    // MARK: - Filter Methods
-
-    @discardableResult
-    public func eq(_ column: String, _ value: Any) -> Self {
-        addFilter(column, negateNext ? "neq" : "eq", value)
-        negateNext = false
-        return self
-    }
-
-    @discardableResult
-    public func neq(_ column: String, _ value: Any) -> Self {
-        addFilter(column, negateNext ? "eq" : "neq", value)
-        negateNext = false
-        return self
-    }
-
-    @discardableResult
-    public func gt(_ column: String, _ value: Any) -> Self {
-        addFilter(column, negateNext ? "lte" : "gt", value)
-        negateNext = false
-        return self
-    }
-
-    @discardableResult
-    public func gte(_ column: String, _ value: Any) -> Self {
-        addFilter(column, negateNext ? "lt" : "gte", value)
-        negateNext = false
-        return self
-    }
-
-    @discardableResult
-    public func lt(_ column: String, _ value: Any) -> Self {
-        addFilter(column, negateNext ? "gte" : "lt", value)
-        negateNext = false
-        return self
-    }
-
-    @discardableResult
-    public func lte(_ column: String, _ value: Any) -> Self {
-        addFilter(column, negateNext ? "gt" : "lte", value)
-        negateNext = false
-        return self
-    }
-
-    @discardableResult
-    public func like(_ column: String, _ pattern: String) -> Self {
-        addFilter(column, negateNext ? "nlike" : "like", pattern)
-        negateNext = false
-        return self
-    }
-
-    @discardableResult
-    public func ilike(_ column: String, _ pattern: String) -> Self {
-        addFilter(column, negateNext ? "nilike" : "ilike", pattern)
-        negateNext = false
-        return self
-    }
-
-    @discardableResult
-    public func `is`(_ column: String, _ value: Any?) -> Self {
-        addFilter(column, negateNext ? "isnot" : "is", value as Any)
-        negateNext = false
-        return self
-    }
-
-    @discardableResult
-    public func `in`(_ column: String, _ values: [Any]) -> Self {
-        addFilter(column, negateNext ? "nin" : "in", values)
-        negateNext = false
-        return self
-    }
-
-    @discardableResult
-    public func contains(_ column: String, _ value: [Any]) -> Self {
-        addFilter(column, "cs", value)
-        negateNext = false
-        return self
-    }
-
-    @discardableResult
-    public func containedBy(_ column: String, _ value: [Any]) -> Self {
-        addFilter(column, "cd", value)
-        negateNext = false
-        return self
-    }
-
-    @discardableResult
-    public func overlaps(_ column: String, _ value: [Any]) -> Self {
-        addFilter(column, "ov", value)
-        negateNext = false
-        return self
-    }
-
-    @discardableResult
-    public func textSearch(_ column: String, _ query: String, config: String? = nil) -> Self {
-        addFilter(column, "fts", query, config)
-        negateNext = false
-        return self
-    }
-
-    /// Negate the next filter.
-    public var not: Self {
-        negateNext = true
-        return self
-    }
-
-    /// Combine filters with OR.
-    @discardableResult
-    public func or(_ filters: String) -> Self {
-        self.filters.append(["type": "or", "value": filters])
-        return self
-    }
-
-    /// Order results.
-    @discardableResult
-    public func order(_ column: String, ascending: Bool = true, nullsFirst: Bool? = nil) -> Self {
-        var spec: [String: Any] = ["column": column, "ascending": ascending]
-        if let nullsFirst = nullsFirst {
-            spec["nullsFirst"] = nullsFirst
+        if !Query.isIdentifier(table) {
+            error = .invalidArgument("table must be a SQL identifier (letters, digits, _), got \"\(table)\"")
         }
-        orderSpecs.append(spec)
-        return self
+        if projectId == nil { error = VaifError.projectIdRequired("A data query") }
     }
 
-    /// Limit results.
-    @discardableResult
-    public func limit(_ count: Int) -> Self {
-        limitCount = count
-        return self
-    }
-
-    /// Offset results.
-    @discardableResult
-    public func offset(_ count: Int) -> Self {
-        offsetCount = count
-        return self
-    }
-
-    /// Range of results.
-    @discardableResult
-    public func range(_ start: Int, _ end: Int) -> Self {
-        offsetCount = start
-        limitCount = end - start + 1
-        return self
-    }
-
-    /// Include count in result.
-    @discardableResult
-    public func count(_ type: String = "exact") -> Self {
-        countOption = type
-        return self
-    }
-
-    /// Return single result.
-    public func single<U: Decodable>() async throws -> QueryResult<U> {
-        limitCount = 1
-        let result: QueryResult<[U]> = try await execute()
-
-        if let error = result.error {
-            return QueryResult(data: nil, error: error, status: result.status, count: nil)
-        }
-
-        guard let data = result.data, !data.isEmpty else {
-            return QueryResult(
-                data: nil,
-                error: QueryError(message: "No rows returned", code: "PGRST116", details: nil),
-                status: 406,
-                count: nil
-            )
-        }
-
-        return QueryResult(data: data.first, error: nil, status: result.status, count: nil)
-    }
-
-    /// Return first result or nil.
-    public func maybeSingle<U: Decodable>() async throws -> QueryResult<U?> {
-        limitCount = 1
-        let result: QueryResult<[U]> = try await execute()
-
-        if let error = result.error {
-            return QueryResult(data: nil, error: error, status: result.status, count: nil)
-        }
-
-        return QueryResult(data: result.data?.first, error: nil, status: result.status, count: nil)
-    }
-
-    /// Execute the query.
-    public func execute<U: Decodable>() async throws -> QueryResult<[U]> {
-        let body = buildQuery()
-
-        let response: ApiResponse<QueryResponse<U>> = try await client.request(
-            path: "/db/\(table)",
-            method: getHttpMethod(),
-            body: AnyCodable(body)
-        )
-
-        if let error = response.error {
-            return QueryResult(
-                data: nil,
-                error: QueryError(
-                    message: error.message,
-                    code: error.code ?? "QUERY_ERROR",
-                    details: error.details
-                ),
-                status: response.status,
-                count: nil
-            )
-        }
-
-        return QueryResult(
-            data: response.data?.data,
-            error: nil,
-            status: response.status,
-            count: response.data?.count
-        )
-    }
-
-    // MARK: - Private Helpers
-
-    private func addFilter(_ column: String, _ op: String, _ value: Any, _ extra: String? = nil) {
-        var filter: [String: Any] = [
-            "type": "filter",
-            "column": column,
-            "operator": op,
-            "value": value
-        ]
-        if let extra = extra {
-            filter["extra"] = extra
-        }
-        filters.append(filter)
-    }
-
-    private func getHttpMethod() -> String {
-        switch queryType {
-        case "insert": return "POST"
-        case "update": return "PATCH"
-        case "delete": return "DELETE"
-        default: return "GET"
+    static func isIdentifier(_ text: String) -> Bool {
+        guard let first = text.unicodeScalars.first, first.isASCII,
+              CharacterSet.letters.contains(first) || first == "_" else { return false }
+        return text.unicodeScalars.allSatisfy {
+            $0.isASCII && (CharacterSet.alphanumerics.contains($0) || $0 == "_")
         }
     }
 
-    private func buildQuery() -> [String: Any] {
-        var query: [String: Any] = ["type": queryType]
+    private func failing(_ message: String) -> Query {
+        var copy = self
+        if copy.error == nil { copy.error = .invalidArgument(message) }
+        return copy
+    }
 
-        if queryType == "select" {
-            query["select"] = selectColumns
+    private func clause(_ column: String, _ op: String, _ value: JSONValue) -> Query {
+        guard Query.isIdentifier(column) else { return failing("column must be a SQL identifier, got \"\(column)\"") }
+        var copy = self
+        copy.filters.append(["field": .string(column), "operator": .string(op), "value": value])
+        return copy
+    }
+
+    // MARK: Filters (ANDed)
+
+    public func eq(_ column: String, _ value: some JSONRepresentable) -> Query { clause(column, "eq", value.jsonValue) }
+    public func neq(_ column: String, _ value: some JSONRepresentable) -> Query { clause(column, "neq", value.jsonValue) }
+    public func gt(_ column: String, _ value: some JSONRepresentable) -> Query { clause(column, "gt", value.jsonValue) }
+    public func gte(_ column: String, _ value: some JSONRepresentable) -> Query { clause(column, "gte", value.jsonValue) }
+    public func lt(_ column: String, _ value: some JSONRepresentable) -> Query { clause(column, "lt", value.jsonValue) }
+    public func lte(_ column: String, _ value: some JSONRepresentable) -> Query { clause(column, "lte", value.jsonValue) }
+    public func like(_ column: String, _ pattern: String) -> Query { clause(column, "like", .string(pattern)) }
+    public func ilike(_ column: String, _ pattern: String) -> Query { clause(column, "ilike", .string(pattern)) }
+
+    public func `in`(_ column: String, _ values: [some JSONRepresentable]) -> Query {
+        guard !values.isEmpty else { return failing("in(\"\(column)\") needs at least one value") }
+        return clause(column, "in", .array(values.map(\.jsonValue)))
+    }
+
+    /// Add a raw clause, ANDed with the others, e.g. an OR group:
+    /// `.where(["OR": [["field": "a", "value": 1], ["field": "b", "value": 2]]])`.
+    public func `where`(_ clause: JSONValue) -> Query {
+        guard case let .object(object) = clause, !object.isEmpty else { return failing("where() needs a non-empty object") }
+        var copy = self
+        copy.filters.append(clause)
+        return copy
+    }
+
+    // MARK: Modifiers
+
+    /// Return only these columns (default: all).
+    public func select(_ columns: String...) -> Query {
+        if columns == ["*"] { var copy = self; copy.columns = []; return copy }
+        guard let bad = columns.first(where: { !Query.isIdentifier($0) }) else {
+            var copy = self
+            copy.columns = columns
+            return copy
         }
+        return failing("column must be a SQL identifier, got \"\(bad)\"")
+    }
 
-        if queryType == "insert", let data = insertData {
-            query["data"] = data
+    /// Sort by `column`; call again to add secondary sort keys.
+    public func order(_ column: String, ascending: Bool = true) -> Query {
+        guard Query.isIdentifier(column) else { return failing("column must be a SQL identifier, got \"\(column)\"") }
+        var copy = self
+        copy.ordering.append((column, !ascending))
+        return copy
+    }
+
+    public func limit(_ count: Int) -> Query {
+        guard (1...Query.maxLimit).contains(count) else { return failing("limit must be between 1 and \(Query.maxLimit)") }
+        var copy = self
+        copy.limitValue = count
+        return copy
+    }
+
+    public func offset(_ count: Int) -> Query {
+        guard count >= 0 else { return failing("offset must be >= 0") }
+        var copy = self
+        copy.offsetValue = count
+        return copy
+    }
+
+    /// Inclusive zero-based range. Like limit/offset, validated at execution.
+    public func range(from: Int, to: Int) -> Query {
+        guard from >= 0, to >= from, to - from < Self.maxLimit else {
+            return failing("range must be nonnegative, ordered and contain at most \(Self.maxLimit) rows")
         }
+        return offset(from).limit(to - from + 1)
+    }
 
-        if queryType == "update", let data = updateData {
-            query["data"] = data
-        }
+    // MARK: Serializing
 
+    private func queryItems(limit: Int?, offset: Int?) throws -> [URLQueryItem] {
+        var items: [URLQueryItem] = []
         if !filters.isEmpty {
-            query["filters"] = filters
+            let tree: JSONValue = filters.count == 1 ? filters[0] : ["AND": .array(filters)]
+            let encoder = JSONEncoder()
+            encoder.outputFormatting = [.sortedKeys, .withoutEscapingSlashes]
+            let data: Data
+            do {
+                data = try encoder.encode(tree)
+            } catch {
+                throw VaifError.invalidArgument("could not encode the filters: \(VaifError.describe(error))")
+            }
+            items.append(URLQueryItem(name: "where", value: String(decoding: data, as: UTF8.self)))
         }
-
-        if !orderSpecs.isEmpty {
-            query["order"] = orderSpecs
+        if !columns.isEmpty { items.append(URLQueryItem(name: "select", value: columns.joined(separator: ","))) }
+        if !ordering.isEmpty {
+            items.append(URLQueryItem(name: "orderBy", value: ordering.map(\.column).joined(separator: ",")))
+            items.append(URLQueryItem(name: "orderDir", value: ordering.map { $0.descending ? "desc" : "asc" }.joined(separator: ",")))
         }
-
-        if let limit = limitCount {
-            query["limit"] = limit
-        }
-
-        if let offset = offsetCount {
-            query["offset"] = offset
-        }
-
-        if let count = countOption {
-            query["count"] = count
-        }
-
-        return query
-    }
-}
-
-// MARK: - Helper Types
-
-struct RawQueryResponse<T: Decodable>: Decodable {
-    let rows: [T]
-}
-
-struct QueryResponse<T: Decodable>: Decodable {
-    let data: [T]
-    let count: Int?
-}
-
-struct AnyCodable: Encodable {
-    let value: Any
-
-    init(_ value: Any) {
-        self.value = value
+        if let limit { items.append(URLQueryItem(name: "limit", value: String(limit))) }
+        if let offset, offset > 0 { items.append(URLQueryItem(name: "offset", value: String(offset))) }
+        return items
     }
 
-    func encode(to encoder: Encoder) throws {
-        var container = encoder.singleValueContainer()
-        try encodeValue(value, to: &container)
+    private var basePath: String { "/v1/data/\(Transport.escape(projectId))/\(table)" }
+
+    private func rowPath(_ id: String) throws -> String {
+        guard !id.isEmpty else { throw VaifError.invalidArgument("id must not be empty") }
+        return "\(basePath)/\(Transport.escape(id))"
     }
 
-    private func encodeValue(_ value: Any, to container: inout SingleValueEncodingContainer) throws {
+    private struct ListPayload: Decodable {
+        let data: [Row]?
+        let count: Int?
+    }
+
+    private struct RowPayload: Decodable {
+        let data: Row?
+    }
+
+    private func send(_ request: HTTPRequest) async throws -> HTTPResponse {
+        try await sendAuthorized(request, transport: transport, auth: auth)
+    }
+
+    private func fetch(limit: Int?, offset: Int?) async throws -> ListPayload {
+        if let error { throw error }
+        var request = HTTPRequest(method: "GET", path: basePath)
+        request.query = try queryItems(limit: limit, offset: offset)
+        return try await send(request).decode(ListPayload.self)
+    }
+
+    private func row(_ response: HTTPResponse) throws -> Row {
+        guard let row = try response.decode(RowPayload.self).data else {
+            throw VaifError(kind: .badResponse, message: "the response did not include a row", status: response.status)
+        }
+        return row
+    }
+
+    // MARK: Terminals
+
+    /// Matching rows plus the total match count.
+    public func list() async throws -> ListResult<Row> {
+        let payload = try await fetch(limit: limitValue, offset: offsetValue)
+        let data = payload.data ?? []
+        return ListResult(data: data, count: payload.count ?? data.count)
+    }
+
+    /// Total matching rows, ignoring pagination, with the full filter tree.
+    public func count() async throws -> Int {
+        guard let count = try await fetch(limit: 1, offset: nil).count else {
+            throw VaifError(kind: .badResponse, message: "the response did not include a count")
+        }
+        return count
+    }
+
+    /// Matching rows decoded into `T`, plus the total match count.
+    public func list<T: Decodable & Sendable>(as type: T.Type, decoder: JSONDecoder = JSONDecoder()) async throws -> ListResult<T> {
+        let result = try await list()
+        let rows = try result.data.map { try JSONValue.object($0).decode(T.self, decoder: decoder) }
+        return ListResult(data: rows, count: result.count)
+    }
+
+    /// The first matching row, or nil.
+    public func first() async throws -> Row? {
+        try await fetch(limit: 1, offset: offsetValue).data?.first
+    }
+
+    /// One page of results; `page` starts at 1.
+    public func paginate(page: Int, pageSize: Int = 20) async throws -> Page<Row> {
+        guard page >= 1 else { throw VaifError.invalidArgument("page must be >= 1") }
+        guard (1...Query.maxLimit).contains(pageSize) else {
+            throw VaifError.invalidArgument("pageSize must be between 1 and \(Query.maxLimit)")
+        }
+        let payload = try await fetch(limit: pageSize, offset: (page - 1) * pageSize)
+        let data = payload.data ?? []
+        return Page(data: data, total: payload.count ?? data.count, page: page, pageSize: pageSize)
+    }
+
+    /// One row by primary key; throws `.notFound` when missing.
+    public func get(_ id: String) async throws -> Row {
+        if let error { throw error }
+        var request = HTTPRequest(method: "GET", path: try rowPath(id))
+        if !columns.isEmpty { request.query = [URLQueryItem(name: "select", value: columns.joined(separator: ","))] }
+        return try row(await send(request))
+    }
+
+    /// One row decoded into `T`.
+    public func get<T: Decodable>(_ id: String, as type: T.Type, decoder: JSONDecoder = JSONDecoder()) async throws -> T {
+        try JSONValue.object(await get(id)).decode(T.self, decoder: decoder)
+    }
+
+    /// Insert one row (a `Row` or any `Encodable`) and return it.
+    @discardableResult
+    public func insert(_ values: some Encodable) async throws -> Row {
+        if let error { throw error }
+        return try row(await send(try .json("POST", basePath, values)))
+    }
+
+    /// Insert rows in one request; all rows must share the same keys.
+    @discardableResult
+    public func insertMany(_ rows: [Row]) async throws -> [Row] {
+        if let error { throw error }
+        guard !rows.isEmpty else { return [] }
+        return try await send(try .json("POST", "\(basePath)/bulk", rows)).decode(ListPayload.self).data ?? []
+    }
+
+    /// Insert, or update the row that conflicts on `onConflict` columns.
+    @discardableResult
+    public func upsert(_ values: Row, onConflict: [String]) async throws -> Row {
+        if let error { throw error }
+        guard !onConflict.isEmpty else { throw VaifError.invalidArgument("upsert needs at least one conflict column") }
+        if let bad = onConflict.first(where: { !Query.isIdentifier($0) }) {
+            throw VaifError.invalidArgument("conflict column must be a SQL identifier, got \"\(bad)\"")
+        }
+        var payload = values
+        payload["_upsert"] = true
+        payload["_conflict_columns"] = .array(onConflict.map(JSONValue.string))
+        return try row(await send(try .json("POST", basePath, payload)))
+    }
+
+    /// Update one row by primary key and return it.
+    @discardableResult
+    public func update(_ id: String, _ values: some Encodable) async throws -> Row {
+        if let error { throw error }
+        return try row(await send(try .json("PATCH", try rowPath(id), values)))
+    }
+
+    /// Delete one row by primary key.
+    public func delete(_ id: String) async throws {
+        if let error { throw error }
+        _ = try await send(HTTPRequest(method: "DELETE", path: try rowPath(id)))
+    }
+
+    // MARK: Bulk writes by filter
+
+    private struct Leaf {
+        let field: String
+        let op: String
+        let value: JSONValue
+    }
+
+    /// The filters as single-column clauses, or nil if any is a raw `where()` group.
+    private func leaves() -> [Leaf]? {
+        var result: [Leaf] = []
+        for filter in filters {
+            guard case let .object(object) = filter, object.count == 3,
+                  let field = object["field"]?.stringValue, Query.isIdentifier(field),
+                  let op = object["operator"]?.stringValue, let value = object["value"] else { return nil }
+            result.append(Leaf(field: field, op: op, value: value))
+        }
+        return result
+    }
+
+    /// A scalar as the bulk routes read it (they compare text parameters).
+    private static func text(_ value: JSONValue) -> String? {
         switch value {
-        case let v as String:
-            try container.encode(v)
-        case let v as Int:
-            try container.encode(v)
-        case let v as Double:
-            try container.encode(v)
-        case let v as Bool:
-            try container.encode(v)
-        case let v as [Any]:
-            var nestedContainer = container.encoder.unkeyedContainer()
-            for item in v {
-                try encodeValueToUnkeyed(item, to: &nestedContainer)
-            }
-        case let v as [String: Any]:
-            var nestedContainer = container.encoder.container(keyedBy: DynamicKey.self)
-            for (key, val) in v {
-                try encodeValueToKeyed(val, forKey: DynamicKey(stringValue: key)!, to: &nestedContainer)
-            }
-        case is NSNull:
-            try container.encodeNil()
-        default:
-            if let encodable = value as? Encodable {
-                try encodable.encode(to: container.encoder)
-            }
+        case .string(let text): return text
+        case .bool(let flag): return flag ? "true" : "false"
+        case .integer(let number): return String(number)
+        case .number(let number) where number.isFinite: return String(number)
+        default: return nil
         }
     }
 
-    private func encodeValueToUnkeyed(_ value: Any, to container: inout UnkeyedEncodingContainer) throws {
-        switch value {
-        case let v as String:
-            try container.encode(v)
-        case let v as Int:
-            try container.encode(v)
-        case let v as Double:
-            try container.encode(v)
-        case let v as Bool:
-            try container.encode(v)
-        case let v as [Any]:
-            var nested = container.nestedUnkeyedContainer()
-            for item in v {
-                try encodeValueToUnkeyed(item, to: &nested)
+    /// Update every row that matches this query's `eq()` filters
+    /// (`PATCH /v1/data/:projectId/:table/bulk`) and return them.
+    ///
+    /// The bulk route matches on equality only, so any other filter, a
+    /// `where()` group, a null value or no filter at all is refused before
+    /// sending: it would otherwise be dropped by the server and widen the update.
+    @discardableResult
+    public func updateMany(_ values: Row) async throws -> ListResult<Row> {
+        if let error { throw error }
+        guard !values.isEmpty else { throw VaifError.invalidArgument("updateMany needs at least one column to set") }
+        if let bad = values.keys.sorted().first(where: { !Query.isIdentifier($0) }) {
+            throw VaifError.invalidArgument("column must be a SQL identifier, got \"\(bad)\"")
+        }
+        guard let leaves = leaves(), !leaves.isEmpty else {
+            throw VaifError.invalidArgument("updateMany needs at least one eq() filter and no where() groups")
+        }
+        var filter: Row = [:]
+        for leaf in leaves {
+            guard leaf.op == "eq", Self.text(leaf.value) != nil else {
+                throw VaifError.invalidArgument("updateMany supports only eq() filters with a non-null value; got \(leaf.op) on \"\(leaf.field)\"")
             }
-        case let v as [String: Any]:
-            try container.encode(AnyCodable(v))
-        case is NSNull:
-            try container.encodeNil()
-        default:
-            break
+            guard filter[leaf.field] == nil else {
+                throw VaifError.invalidArgument("updateMany allows one eq() per column; \"\(leaf.field)\" has two")
+            }
+            filter[leaf.field] = leaf.value
         }
+        let body: Row = ["data": .object(values), "filter": .object(filter)]
+        let payload = try await send(try .json("PATCH", "\(basePath)/bulk", body)).decode(ListPayload.self)
+        let data = payload.data ?? []
+        return ListResult(data: data, count: payload.count ?? data.count)
     }
 
-    private func encodeValueToKeyed(_ value: Any, forKey key: DynamicKey, to container: inout KeyedEncodingContainer<DynamicKey>) throws {
-        switch value {
-        case let v as String:
-            try container.encode(v, forKey: key)
-        case let v as Int:
-            try container.encode(v, forKey: key)
-        case let v as Double:
-            try container.encode(v, forKey: key)
-        case let v as Bool:
-            try container.encode(v, forKey: key)
-        case let v as [Any]:
-            try container.encode(AnyCodable(v), forKey: key)
-        case let v as [String: Any]:
-            try container.encode(AnyCodable(v), forKey: key)
-        case is NSNull:
-            try container.encodeNil(forKey: key)
-        default:
-            break
+    /// Delete every row that matches this query's filters
+    /// (`DELETE /v1/data/:projectId/:table/bulk`) and return how many.
+    ///
+    /// Supports eq (including null), neq, gt, gte, lt, lte, like, ilike and
+    /// in (values without commas), one per column and operator. A `where()`
+    /// group or no filter at all is refused before sending.
+    @discardableResult
+    public func deleteMany() async throws -> Int {
+        if let error { throw error }
+        guard let leaves = leaves(), !leaves.isEmpty else {
+            throw VaifError.invalidArgument("deleteMany needs at least one filter and no where() groups")
         }
-    }
-}
-
-struct DynamicKey: CodingKey {
-    var stringValue: String
-    var intValue: Int?
-
-    init?(stringValue: String) {
-        self.stringValue = stringValue
-        self.intValue = nil
-    }
-
-    init?(intValue: Int) {
-        self.stringValue = "\(intValue)"
-        self.intValue = intValue
+        var items: [URLQueryItem] = []
+        var seen = Set<String>()
+        for leaf in leaves {
+            let key: String
+            let value: String
+            switch (leaf.op, leaf.value) {
+            case ("eq", .null):
+                key = "\(leaf.field).is"; value = "null"
+            case ("in", .array(let values)):
+                let texts = values.compactMap(Self.text)
+                guard !texts.isEmpty, texts.count == values.count, !texts.contains(where: { $0.contains(",") }) else {
+                    throw VaifError.invalidArgument("deleteMany: in(\"\(leaf.field)\") needs non-null values without commas")
+                }
+                key = "\(leaf.field).in"; value = texts.joined(separator: ",")
+            case (let op, let scalar) where ["eq", "neq", "gt", "gte", "lt", "lte", "like", "ilike"].contains(op):
+                guard let text = Self.text(scalar) else {
+                    throw VaifError.invalidArgument("deleteMany: \(op)(\"\(leaf.field)\") needs a non-null scalar value")
+                }
+                key = "\(leaf.field).\(op)"; value = text
+            default:
+                throw VaifError.invalidArgument("deleteMany does not support \(leaf.op) on \"\(leaf.field)\"")
+            }
+            // A repeated key reaches the server as an array, which it skips.
+            guard seen.insert(key).inserted else {
+                throw VaifError.invalidArgument("deleteMany allows one \(leaf.op) filter per column; \"\(leaf.field)\" has two")
+            }
+            items.append(URLQueryItem(name: "filter[\(key)]", value: value))
+        }
+        var request = HTTPRequest(method: "DELETE", path: "\(basePath)/bulk")
+        request.query = items
+        struct Payload: Decodable { let deleted: Int?; let count: Int? }
+        let payload = try await send(request).decode(Payload.self)
+        return payload.deleted ?? payload.count ?? 0
     }
 }

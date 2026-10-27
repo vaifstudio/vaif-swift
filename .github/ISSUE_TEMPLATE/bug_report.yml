@@ -1,0 +1,50 @@
+name: Bug report
+description: Report a problem with VaifClient.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Do not report security vulnerabilities here. Email security@vaif.studio as described in SECURITY.md.
+        Remove API keys, access tokens and personal data from everything you paste.
+  - type: input
+    id: version
+    attributes:
+      label: VaifClient version
+      placeholder: "1.0.0"
+    validations:
+      required: true
+  - type: input
+    id: platform
+    attributes:
+      label: Platform and OS version
+      placeholder: "iOS 18.1 on a device"
+    validations:
+      required: true
+  - type: input
+    id: toolchain
+    attributes:
+      label: Xcode or Swift version
+      placeholder: "Xcode 16.1"
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: What happened
+      description: If a VaifError was thrown, include its kind, code, status and requestId.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Code that reproduces the problem
+      render: swift
+    validations:
+      required: true

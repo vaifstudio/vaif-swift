@@ -1,5 +1,6 @@
-// swift-tools-version: 5.9
-// The swift-tools-version declares the minimum version of Swift required to build this package.
+// swift-tools-version: 6.0
+// Swift 6 language mode (complete concurrency checking). Requires Xcode 16+ /
+// Swift 6 toolchains; tests use swift-testing.
 
 import PackageDescription
 
@@ -10,26 +11,21 @@ let package = Package(
         .macOS(.v12),
         .tvOS(.v15),
         .watchOS(.v8),
-        .visionOS(.v1)
+        .visionOS(.v1),
     ],
     products: [
-        .library(
-            name: "VaifClient",
-            targets: ["VaifClient"]
-        ),
+        .library(name: "VaifClient", targets: ["VaifClient"]),
     ],
     targets: [
         .target(
             name: "VaifClient",
-            path: "Sources/VaifClient",
-            linkerSettings: [
-                .linkedFramework("Security"),
-            ]
+            path: "Sources/VaifClient"
         ),
         .testTarget(
             name: "VaifClientTests",
             dependencies: ["VaifClient"],
-            path: "Tests/VaifClientTests"
+            path: "Tests/VaifClientTests",
+            resources: [.copy("Fixtures")]
         ),
     ]
 )

@@ -1,0 +1,166 @@
+{
+  "version": 1,
+  "cases": [
+    {
+      "id": "owner-crud-and-key-rotation",
+      "setup": {
+        "fixture": "core",
+        "keys": ["anon", "service_role"],
+        "table": {
+          "ownerRule": "-- vaif:owner owner_id",
+          "columns": "id uuid PRIMARY KEY DEFAULT gen_random_uuid(), owner_id uuid NOT NULL, body text"
+        }
+      },
+      "steps": [
+        {
+          "op": "signUp",
+          "actor": "alice",
+          "as": "aliceSession",
+          "expect": { "has": ["accessToken", "user.id"] }
+        },
+        {
+          "op": "signUp",
+          "actor": "bob",
+          "as": "bobSession",
+          "expect": { "has": ["accessToken", "user.id"] }
+        },
+        {
+          "op": "setAuth",
+          "actor": "alice",
+          "args": { "token": "$aliceSession.accessToken" },
+          "expect": {}
+        },
+        {
+          "op": "setAuth",
+          "actor": "bob",
+          "args": { "token": "$bobSession.accessToken" },
+          "expect": {}
+        },
+        {
+          "op": "createRow",
+          "actor": "alice",
+          "args": { "body": "alice note" },
+          "as": "row",
+          "expect": {
+            "equals": {
+              "body": "alice note",
+              "owner_id": "$aliceSession.user.id"
+            },
+            "has": ["id"]
+          }
+        },
+        {
+          "op": "listRows",
+          "actor": "alice",
+          "expect": { "equals": { "count": 1 }, "length": { "data": 1 } }
+        },
+        {
+          "op": "listRows",
+          "actor": "bob",
+          "expect": { "equals": { "count": 0 }, "length": { "data": 0 } }
+        },
+        {
+          "op": "getRow",
+          "actor": "alice",
+          "args": { "id": "$row.id" },
+          "expect": { "equals": { "id": "$row.id", "body": "alice note" } }
+        },
+        {
+          "op": "updateRow",
+          "actor": "alice",
+          "args": { "id": "$row.id", "values": { "body": "updated note" } },
+          "expect": { "equals": { "body": "updated note" } }
+        },
+        {
+          "op": "deleteRow",
+          "actor": "alice",
+          "args": { "id": "$row.id" },
+          "expect": {}
+        },
+        {
+          "op": "listRows",
+          "actor": "alice",
+          "expect": { "equals": { "count": 0 }, "length": { "data": 0 } }
+        },
+        { "op": "rotateSigningKey", "expect": {} },
+        {
+          "op": "listRows",
+          "actor": "alice",
+          "expect": { "error": { "status": 401, "code": "TOKEN_INVALID" } }
+        }
+      ]
+    },
+    {
+      "id": "storage-upload-download-list",
+      "setup": {
+        "fixture": "core",
+        "keys": ["anon", "service_role"],
+        "table": {
+          "ownerRule": "-- vaif:owner owner_id",
+          "columns": "id uuid PRIMARY KEY DEFAULT gen_random_uuid(), owner_id uuid NOT NULL, body text"
+        }
+      },
+      "steps": [
+        {
+          "op": "storageUpload",
+          "actor": "service",
+          "args": {
+            "key": "conformance.txt",
+            "text": "VAIF local conformance"
+          },
+          "expect": {}
+        },
+        {
+          "op": "storageDownload",
+          "actor": "service",
+          "args": { "key": "conformance.txt" },
+          "expect": { "equals": { "text": "VAIF local conformance" } }
+        },
+        {
+          "op": "storageList",
+          "actor": "service",
+          "expect": { "includesKey": "conformance.txt" }
+        }
+      ]
+    },
+    {
+      "id": "local-function-invocation",
+      "requires": "function",
+      "setup": {
+        "fixture": "core",
+        "keys": ["anon", "service_role"],
+        "table": {
+          "ownerRule": "-- vaif:owner owner_id",
+          "columns": "id uuid PRIMARY KEY DEFAULT gen_random_uuid(), owner_id uuid NOT NULL, body text"
+        }
+      },
+      "steps": [
+        {
+          "op": "invokeFunction",
+          "actor": "service",
+          "args": { "name": "hello_world" },
+          "expect": { "equals": { "message": "Hello from VAIF Functions!" } }
+        }
+      ]
+    },
+    {
+      "id": "realtime-subscribe-and-receive",
+      "requires": "realtime",
+      "setup": {
+        "fixture": "core",
+        "keys": ["anon", "service_role"],
+        "table": {
+          "ownerRule": "-- vaif:owner owner_id",
+          "columns": "id uuid PRIMARY KEY DEFAULT gen_random_uuid(), owner_id uuid NOT NULL, body text"
+        }
+      },
+      "steps": [
+        {
+          "op": "realtimeRoundTrip",
+          "actor": "service",
+          "expect": { "equals": { "op": "INSERT" } }
+        }
+      ]
+    }
+  ]
+}

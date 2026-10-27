@@ -1,0 +1,102 @@
+name: CI
+
+# Builds and tests VaifClient when this directory is the repository root
+# (github.com/vaifstudio/vaif-swift). It never publishes: a release is a
+# version tag created by a maintainer.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-test:
+    name: Build and test (macOS, Xcode)
+    runs-on: macos-15
+    timeout-minutes: 30
+    env:
+      # The fewest tests a healthy run reports. A run that reports fewer (a
+      # test target that stopped compiling its tests) fails.
+      MIN_TESTS: '100'
+      # The Keychain tests may not skip themselves in CI.
+      VAIF_REQUIRE_KEYCHAIN: '1'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # swift-testing ships with Xcode, not with the Command Line Tools, so
+      # select the newest Xcode 16 or 26 on the runner image.
+      - name: Select Xcode
+        run: |
+          set -eu
+          XCODE=$(ls -d /Applications/Xcode_*.app | grep -E '/Xcode_(16|26)(\.[0-9]+)*\.app$' | sort -V | tail -n 1)
+          test -n "$XCODE"
+          sudo xcode-select -s "$XCODE/Contents/Developer"
+          xcodebuild -version
+          swift --version
+
+      - name: Build
+        run: swift build
+
+      - name: Test
+        run: |
+          set -o pipefail
+          swift test 2>&1 | tee "$RUNNER_TEMP/swift-test.log"
+          COUNT=$(sed -nE 's/.*Test run with ([0-9]+) tests? .*passed.*/\1/p' "$RUNNER_TEMP/swift-test.log" | tail -n 1)
+          echo "swift-testing reported ${COUNT:-no} passing tests (minimum $MIN_TESTS)"
+          test -n "$COUNT" && test "$COUNT" -ge "$MIN_TESTS"
+          # The integration tests skip without VAIF_IT_* settings; the Keychain tests may not skip.
+          if grep 'Keychain not writable' "$RUNNER_TEMP/swift-test.log"; then
+            echo "The Keychain tests skipped; they must run in CI." >&2
+            exit 1
+          fi
+
+      # The package also declares iOS, tvOS, watchOS and visionOS. Build for
+      # each one's devices, which includes the 32-bit arm64_32 Apple Watch.
+      - name: Build for iOS, tvOS, watchOS and visionOS
+        run: |
+          set -eu
+          for platform in iOS tvOS watchOS visionOS; do
+            echo "::group::$platform"
+            xcodebuild build -scheme VaifClient -destination "generic/platform=$platform" -quiet
+            echo "::endgroup::"
+          done
+
+  dependencies:
+    name: No known vulnerabilities in dependencies
+    runs-on: macos-15
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: '1.27.3'
+          cache: false
+      # VaifClient has no package dependencies, so there is nothing for an
+      # advisory to match. When one is added, `swift package resolve` writes
+      # Package.resolved and OSV-Scanner fails this job on any known
+      # vulnerability in it; a dependency without a Package.resolved to scan
+      # fails the job too.
+      - name: Scan the resolved dependencies with OSV-Scanner
+        run: |
+          set -eu
+          swift package resolve
+          if [ -f Package.resolved ]; then
+            go run github.com/google/osv-scanner/v2/cmd/osv-scanner@v2.7.0 scan source --lockfile=Package.resolved
+          else
+            swift package show-dependencies --format json > "$RUNNER_TEMP/dependencies.json"
+            COUNT=$(jq '.dependencies | length' "$RUNNER_TEMP/dependencies.json")
+            echo "Package dependencies: $COUNT"
+            test "$COUNT" -eq 0
+          fi
