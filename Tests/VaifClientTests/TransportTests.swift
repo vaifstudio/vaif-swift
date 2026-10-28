@@ -14,6 +14,29 @@ import Testing
         #expect(local.baseURL.absoluteString == "http://localhost:3000")
     }
 
+    /// Plain http would send the project key and bearer token in cleartext.
+    @Test func baseURLRequiresHTTPSExceptForLoopbackHosts() throws {
+        for (base, normalized) in [
+            ("https://api.example.com/", "https://api.example.com"),
+            ("HTTPS://api.example.com", "HTTPS://api.example.com"),
+            ("http://localhost:3000", "http://localhost:3000"),
+            ("http://127.0.0.1:3000", "http://127.0.0.1:3000"),
+            ("http://[::1]:3000", "http://[::1]:3000"),
+        ] {
+            let client = try VaifClient(projectId: testProject, apiKey: testKey, baseURL: URL(string: base)!,
+                                        sessionStore: MemorySessionStore())
+            #expect(client.baseURL.absoluteString == normalized)
+        }
+        for base in ["http://api.example.com", "HTTP://api.example.com", "http://localhost.example.com"] {
+            let error = #expect(throws: VaifError.self) {
+                try VaifClient(projectId: testProject, apiKey: testKey, baseURL: URL(string: base)!,
+                               sessionStore: MemorySessionStore())
+            }
+            #expect(error?.kind == .invalidArgument)
+            #expect(error?.message == "baseURL must use https (http is accepted only for localhost, 127.0.0.1 and ::1)")
+        }
+    }
+
     @Test func sendsKeyVersionAndUserAgent() async throws {
         let stub = Stub { _, _ in emptyList }
         let client = try makeClient(stub, headers: ["X-App": "demo"])

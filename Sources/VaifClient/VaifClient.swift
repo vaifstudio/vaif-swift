@@ -33,7 +33,7 @@ public final class VaifClient: Sendable {
     ///     and data queries throw `PROJECT_ID_REQUIRED`.
     ///   - apiKey: A project API key, sent as `x-vaif-key`. Use `vk_pub_` keys
     ///     in apps; `vk_srv_` keys bypass row-level security.
-    ///   - baseURL: API origin; https required except for localhost.
+    ///   - baseURL: API origin; https required, http accepted only for localhost, 127.0.0.1 and ::1.
     ///   - timeout: Hard limit per HTTP attempt, in seconds.
     ///   - retry: Retry policy for transient failures.
     ///   - headers: Extra headers sent with every API request.

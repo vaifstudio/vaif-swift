@@ -4,7 +4,7 @@ All notable changes to `VaifClient` are recorded in this file. The package
 follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html); see
 "Versioning" in the README for what counts as a breaking change.
 
-## 1.0.0
+## 1.0.0 (unreleased)
 
 The first supported release. It replaces the retracted 0.1.0 and 0.1.1 tags,
 which called API routes that the VAIF Studio API does not serve. The API is
@@ -13,7 +13,9 @@ new: code written for 0.1.x does not compile against 1.0.0.
 ### Added
 
 - `VaifClient` (`Sendable`): base URL validation (https, except for
-  localhost), a hard timeout per attempt, `RetryPolicy` (replays only
+  `localhost`, `127.0.0.1` and `::1`; any other http base URL throws
+  `invalidArgument`, so the API key and access token never travel in
+  cleartext), a hard timeout per attempt, `RetryPolicy` (replays only
   GET/HEAD/OPTIONS or calls marked idempotent, plus any request that never
   connected), custom headers, cancellation as `CancellationError`, and one
   typed `VaifError` (with the response `headers`) for every failure,

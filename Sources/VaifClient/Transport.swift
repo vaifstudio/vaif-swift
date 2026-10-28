@@ -104,7 +104,7 @@ final class Transport: Sendable {
               scheme == "http" || scheme == "https"
         else { throw VaifError.invalidArgument("baseURL must be an absolute http(s) URL") }
         if scheme == "http", !allowsCleartext(baseURL) {
-            throw VaifError.invalidArgument("baseURL must use https (http is only allowed for localhost)")
+            throw VaifError.invalidArgument("baseURL must use https (http is accepted only for localhost, 127.0.0.1 and ::1)")
         }
         var text = baseURL.absoluteString
         while text.hasSuffix("/") { text.removeLast() }
