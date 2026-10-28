@@ -37,13 +37,13 @@ database changes and every typed API operation, for apps on Apple platforms.
 
 Each release is a version tag on this repository; see
 [tags](https://github.com/vaifstudio/vaif-swift/tags) for the versions
-available. 1.0.0 is the first supported release.
-
-Add the package and the `VaifClient` product to `Package.swift`:
+available. 1.0.0 is the first supported release. Until it is tagged, add the
+package from the `main` branch, with the `VaifClient` product, in
+`Package.swift`:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/vaifstudio/vaif-swift.git", from: "1.0.0"),
+    .package(url: "https://github.com/vaifstudio/vaif-swift.git", branch: "main"),
 ],
 targets: [
     .target(name: "MyApp", dependencies: [
@@ -53,8 +53,12 @@ targets: [
 ```
 
 In Xcode, choose File > Add Package Dependencies, enter
-`https://github.com/vaifstudio/vaif-swift.git`, and select "Up to Next Major
-Version" from 1.0.0.
+`https://github.com/vaifstudio/vaif-swift.git`, and select "Branch" with
+`main`.
+
+The version rule in [Versioning](#versioning) applies once 1.0.0 is tagged:
+then use `from: "1.0.0"` in `Package.swift`, or "Up to Next Major Version" from
+1.0.0 in Xcode.
 
 ## Quick start
 

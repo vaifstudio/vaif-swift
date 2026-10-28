@@ -5,7 +5,9 @@
 Do not report security vulnerabilities in public GitHub issues or pull
 requests.
 
-Email security@vaif.studio. Include:
+Report a vulnerability privately, through the "Report a vulnerability" form on
+this repository's Security tab (GitHub private vulnerability reporting) or by
+email to security@vaif.studio. Include:
 
 - the `VaifClient` version and the platform and OS version where you found the
   issue;
@@ -19,9 +21,10 @@ It is also published in [security.txt](https://vaif.studio/.well-known/security.
 
 ## What happens next
 
-We confirm that we received your report, investigate it, and keep you informed
-as we work on it. If we need more information, we ask you at the address you
-wrote from. When a fix is ready, we release it in a new version, describe it in
+We acknowledge your report within 2 business days and send an initial
+assessment within 5 business days. We then investigate it and keep you
+informed as we work on it. If we need more information, we ask you through the
+channel you used. When a fix is ready, we release it in a new version, describe it in
 [CHANGELOG.md](CHANGELOG.md), and credit you if you want to be credited.
 
 Please give us time to release a fix before you disclose the issue publicly.
